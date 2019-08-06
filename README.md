@@ -49,6 +49,13 @@ rq worker &
 rq worker &
 rq worker &
 ```
+basic_test.py
+```
+import time
+def wait(i,j):
+    print(i)
+    return sum((i,j))
+```
 Python
 ```
 import rq
