@@ -1,5 +1,7 @@
 # multi-rq
-Simple async multiprocessing with RQ. Inspired by launching long CPU-intensive tasks from gunicorn.
+Simple async multiprocessing with RQ.
+
+Think `multiprocessing.Pool.apply_async`, plus modular modes, queues, completion checking and processing as advanced options. Inspired by launching long CPU-intensive tasks from gunicorn.
 
 ```
 # basic_test.py
@@ -24,8 +26,8 @@ This is an extension of [rq](https://github.com/rq/rq) that emulates the `Pool.a
 
 Fundamentally it just 
 - queues all your tasks
-- repeatedly checks whether all the jobs are finished or failed (using the _check function_)
-- returns the results (_results mode_) or the job objects (_jobs mode_). 
+- repeatedly checks whether all the jobs are finished or failed (using the `check` function)
+- returns the results (`'results'` mode) or the job objects (`'jobs'` mode) (or using custom modes)
 
 Please raise issues or pull requests if you have any!
 
@@ -64,7 +66,7 @@ from multi_rq import MultiRQ
 
 mrq = MultiRQ()
 nums = [[(i,j)] for i,j in zip(range(0,20,2),range(11,21))]
-mrq.apply_async(np.mean,nums)
+mrq.apply_async(wait,nums)
 # >>> [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 ```
 
@@ -86,21 +88,69 @@ mrq.apply_async(myfunctions.func,...)
 
 This will save you many headaches.
 
-## Advanced usage
-As `multi-rq` is very simple, the power lies in the _check function_ used to check job status. This function allows you to return what you want, do custom manipulation, etc. The default check function is `default_check` in `rq-multi/rq_multi/rq_multi.py`. 
+## Advanced use - custom queue, modes, _check_ and _proc_ function**
+As `multi-rq` is very simple at heart, the power lies in the _processing function_ `proc` and the _checking function_ `check` used to check job status and process the results in some way.
 
-You can also specify the queue you want to use, with various options, in the class call: 
+**Custom queue**
+You can specify the queue you want to use, with various options, in the class call or later: 
 ```
-mrq = MultiRQ(queue = rq.Queue('myqueue',connection=Redis('redis://url',...))
+# set queue in class instantiation
+mrq = MultiRQ(queue = rq.Queue('myqueue',connection=Redis(...))
+# change attribute
+mrq.queue = rq.Queue('newqueue',connection=Redis(...))
+```
+The default queue is just the Redis `'default'` queue.
+
+**Custom modes**
+Processing can depend on the mode. Add modes in the class instance or by changing the attribute:
+```
+mrq = MultRQ(...,modes=['mymode','othermode'])
+mrq.modes = ['newmode','funmode']
 ```
 
+**`check` function**
+The `check` function allows you to set your own logic for determinining completion. The default check function is `MultiRQ._default_check`, which just checks whether each is failed or finished and returns the list of jobs when done. If `check` is not specified in the function call, the current self.check is used
 
+Change this by passing your custom check function with requirements:
+- accepts a list of jobs
+- checks when your jobs are done
+- when done, returns a list of jobs or other things (depending on your `proc` function)
+e.g.
+```
+def my_check_func(jobs):
+    do_something_to_check_completion
+    return jobs
+
+results = mrq.apply_async(target, args, check=my_check_func)
+mrq = MultiRQ(...check=my_check_func)
+mrq.check = my_check_func
+```
+
+**`proc` function**
+The processing (`proc`) accepts the output of the `check` function and the `mode` and does some processing steps before returning the output. The default processing function is `MultiRQ._default_proc` which just returns the results or jobs depending on the mode. If `proc` is not specified in the function call, the current self.proc is used.
+
+Change this by passing your custom proc function with requirements:
+- accepts output of `check` function and the mode
+- processes ouput
+- returns your output
+e.g.
+```
+def my_proc_func(jobs,mode):
+    if mode=='mymode':
+        return [job.do_this for job in jobs]
+    elif mode=='othermode':
+        return ...
+results = mrq.apply_async(target, args, proc=my_proc_func)
+mrq = MultiRQ(...proc=my_proc_func)
+mrq.proc = my_proc_func
+```
+---
 ## Using with Supervisor
 
 Supervisor is a great way to keep things running in the background for Python with minimal effort. This quick guide assumes you're using Ubuntu.
 
 You need some things to make supervisord work well with redis:
-- redis running as a service (easiest) [great guide here](https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-redis-on-ubuntu-18-04)
+- redis running as a service (easiest) [great setup guide here](https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-redis-on-ubuntu-18-04)
 - path to your Python distribution `bin`. Mine is `.../anaconda/envs/py35/bin`
 - rqsettings.py file; a basic settings file for RQ workers (see example)
 - rqworker.py file; the launch script for your workers (see example)
@@ -112,8 +162,7 @@ sudo apt update
 sudo apt install redis-server
 sudo nano /etc/redis/redis.conf
 ```
-
-/etc/redis/redis.conf
+/etc/redis/redis.conf (only need to edit/add this line)
 ```
 ...
 supervised systemd
@@ -124,7 +173,6 @@ Restart redis or check status
 sudo systemctl restart redis.service
 sudo systemctl status redis
 ```
-
 
 Install supervisor and check path to python dist
 ```
