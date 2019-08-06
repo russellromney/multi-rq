@@ -50,14 +50,14 @@ class MultiRQ:
         self.queue = queue
 
 
-    def apply_async(self,target,args, check=default_check, timeout=1000, mode='results'):
+    def apply_async(self,target,args_list, check=default_check, timeout=1000, mode='results'):
         '''
         returns a list of results or jobs computed with function <target> by workers of self.q
 
         parameters:
             required:
             - target, str or function: name of function or function that RQ will execute
-            - args, iterable: iterable of iterables of function arguments
+            - args_list, iterable: iterable of iterables of function arguments
             
             optional:
             - timeout, int: seconds
@@ -71,7 +71,7 @@ class MultiRQ:
         '''
         mode_check(mode)
 
-        jobs = [self.queue.enqueue(target,args_) for args_ in args]
+        jobs = [self.queue.enqueue(target,*args_) for args_ in args_list]
         t = time.time()
         while time.time()-t < timeout:
             output = check(jobs)
