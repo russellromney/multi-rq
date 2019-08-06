@@ -14,13 +14,20 @@ from multi_rq import MultiRQ
 from basic_test import wait
 
 mrq = MultiRQ()
-mrq.apply_async(wait,[(i,j) for i,j in zip(range(10),range(10))])
+mrq.apply_async(wait, [(i,j) for i,j in zip(range(10),range(10))] )
 # >>> [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
 ```
 
 ---
 
-This is an extension of [rq](https://github.com/rq/rq) that makes it easy to emulate the `Pool.apply_async` behavior of `multiprocessing` with a task queue. I use it with [Supervisor](http://supervisord.org/).
+This is an extension of [rq](https://github.com/rq/rq) that emulates the `Pool.apply_async` behavior in `multiprocessing` with a task queue. I use it with [Supervisor](http://supervisord.org/) (see below for guide).
+
+Fundamentally it just 
+- queues all your tasks
+- repeatedly checks whether all the jobs are finished or failed (using the _check function_)
+- returns the results (_results mode_) or the job objects (_jobs mode_). 
+
+Please raise issues or pull requests if you have any!
 
 **Setup**
 
@@ -71,6 +78,14 @@ mrq.apply_async(myfunctions.func,...)
 ```
 
 This will save you many headaches.
+
+## Advanced usage
+As `multi-rq` is very simple, the power lies in the _check function_ used to check job status. This function allows you to return what you want, do custom manipulation, etc. The default check function is `default_check` in `rq-multi/rq_multi/rq_multi.py`. 
+
+You can also specify the queue you want to use, with various options, in the class call: 
+```
+mrq = MultiRQ(queue = rq.Queue('myqueue',connection=Redis('redis://url',...))
+```
 
 
 ## Using with Supervisor
