@@ -13,7 +13,7 @@ setup(
     license = 'MIT',
     packages = find_packages(),
     install_requires = [
-        'rq',
+        'rq>=1.0',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
