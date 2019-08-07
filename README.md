@@ -89,9 +89,11 @@ mrq.apply_async(myfunctions.func,...)
 This will save you many headaches.
 
 ## Advanced use - custom queue, modes, _check_ and _proc_ function**
+
 As `multi-rq` is very simple at heart, the power lies in the _processing function_ `proc` and the _checking function_ `check` used to check job status and process the results in some way.
 
 **Custom queue**
+
 You can specify the queue you want to use, with various options, in the class call or later: 
 ```
 # set queue in class instantiation
@@ -102,6 +104,7 @@ mrq.queue = rq.Queue('newqueue',connection=Redis(...))
 The default queue is just the Redis `'default'` queue.
 
 **Custom modes**
+
 Processing can depend on the mode. Add modes in the class instance or by changing the attribute:
 ```
 mrq = MultRQ(...,modes=['mymode','othermode'])
@@ -109,6 +112,7 @@ mrq.modes = ['newmode','funmode']
 ```
 
 **`check` function**
+
 The `check` function allows you to set your own logic for determinining completion. The default check function is `MultiRQ._default_check`, which just checks whether each is failed or finished and returns the list of jobs when done. If `check` is not specified in the function call, the current self.check is used
 
 Change this by passing your custom check function with requirements:
@@ -127,6 +131,7 @@ mrq.check = my_check_func
 ```
 
 **`proc` function**
+
 The processing (`proc`) accepts the output of the `check` function and the `mode` and does some processing steps before returning the output. The default processing function is `MultiRQ._default_proc` which just returns the results or jobs depending on the mode. If `proc` is not specified in the function call, the current self.proc is used.
 
 Change this by passing your custom proc function with requirements:
