@@ -64,7 +64,7 @@ class MultiRQ:
             self.proc = proc
 
 
-    def apply_async(self,target,args_list, check=None, proc=None, queue=None, timeout=1000, mode='results'):
+    def apply_async(self,target,args=(),kwargs={}, check=None, proc=None, queue=None, timeout=1000, mode='results'):
         '''
         returns a list of results or jobs computed with function <target> by workers of self.queue
 
@@ -92,15 +92,38 @@ class MultiRQ:
 
         self._mode_check(mode)
 
+        # if args is not iterable or kwargs is not an iterable or dict, raise an error
+        k_type = type(kwargs)
+        assert k_type==dict or k_type==tuple or k_type==list , "MultiRQ: kwargs must be a dict, list or tuple of dicts"
+        if k_type!=dict:
+            assert type(kwargs[0])==dict, "MultiRQ: kwargs must be a dict, list or tuple of dicts"
+
+        a_type = type(args)
+        assert a_type==tuple or a_type==list , "MultiRQ: args must be a list or tuple"
+        
         # enqueue the jobs
-        jobs = [queue.enqueue(target,*args_) for args_ in args_list]
+        # get the length of args; if len_a is 1, then we can apply the same args to all jobs but only if kwargs is an iterable of dicts
+        a_len = len(args)
+        if a_len==0 or a_len==1:
+            # if args is empty, then kwargs has all the inputs
+            if k_type==dict:
+                jobs = [queue.enqueue(target,args=args,kwargs=kwargs)]
+            else:
+                jobs = [queue.enqueue(target,args=args,kwargs=k_) for k_ in kwargs]
+        elif a_len>1:
+            if k_type==dict:
+                jobs = [queue.enqueue(target,args=a_,kwargs=kwargs) for a_ in args]
+            else:
+                assert a_len==len(kwargs), 'MultiRQ: if both args and kwargs are iterables, they must be the same length'
+                jobs = [queue.enqueue(target,args=a_,kwargs=k_) for a_,k_ in zip(args,kwargs)]
+
 
         # apply check and proc
         t = time.time()
         while time.time()-t < timeout:
             jobs = check(jobs)
             return proc(jobs,mode)
-        raise TimeoutError('multi_rq.apply_async: timeout error')
+        raise TimeoutError('MultiRQ: timeout error')
 
 
     def _mode_check(self,mode):

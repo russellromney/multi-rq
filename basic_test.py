@@ -1,4 +1,4 @@
 import time
 def wait(i,j):
-    print(i)
+    time.sleep(.1)
     return sum((i,j))
