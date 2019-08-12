@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'multi-rq',
-    version = '0.2',
+    version = '0.2.1',
     description = 'Simple async multiprocessing with RQ',
-    long_description = 'an extension of rq that emulates the mp.Pool.apply_async behavior in multiprocessing with a task queue',
+    long_description = 'An extension of rq that emulates the mp.Pool.apply_async behavior in multiprocessing with a task queue',
     keywords = ' dash rq redis plotly multiprocessing task queue parallel',
     url = 'https://github.com/russellromney/multi-rq',
     author = 'Russell Romney',
