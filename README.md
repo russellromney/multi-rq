@@ -55,7 +55,7 @@ basic_test.py
 ```
 import time
 def wait(i,j):
-    print(i)
+    time.sleep(.1)
     return sum((i,j))
 ```
 Python
@@ -65,9 +65,15 @@ from basic_test import wait
 from multi_rq import MultiRQ
 
 mrq = MultiRQ()
-nums = [[(i,j)] for i,j in zip(range(0,20,2),range(11,21))]
+nums = [(i,j) for i,j in zip(range(0,20,2),range(11,21))]
 mrq.apply_async(wait,nums)
-# >>> [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+# >>> [11, 14, 17, 20, 23, 26, 29, 32, 35, 38]
+
+# also supports kwargs; any of these will work:
+mrq.apply_async(wait,args=nums)
+mrq.apply_async(wait,nums)
+mrq.apply_async(wait,kwargs=[ {'i':x[0],'j':x[1]} for x in nums])
+>>> [11, 14, 17, 20, 23, 26, 29, 32, 35, 38]
 ```
 
 ## Tips
