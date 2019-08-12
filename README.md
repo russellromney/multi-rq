@@ -69,12 +69,23 @@ nums = [(i,j) for i,j in zip(range(0,20,2),range(11,21))]
 mrq.apply_async(wait,nums)
 # >>> [11, 14, 17, 20, 23, 26, 29, 32, 35, 38]
 
-# also supports kwargs; any of these will work:
+# also supports args and kwargs; any of these will work:
 mrq.apply_async(wait,args=nums)
 mrq.apply_async(wait,nums)
 mrq.apply_async(wait,kwargs=[ {'i':x[0],'j':x[1]} for x in nums])
 >>> [11, 14, 17, 20, 23, 26, 29, 32, 35, 38]
 ```
+
+`kwargs` can be:
+- a single dict to be applied to each job (default is `{}`)
+- a list/tuple of length N unique dicts to be applied to each job respectively
+
+`args` can be:
+- an iterator of length 0 (default)
+- an iterator of length 1, with the single arg to be applied to all jobs
+- an iterator of length N of unique args iterators to be applied to each job respectively
+
+Type checking is built in so you don't get hanging processes without knowing why.
 
 ## Tips
 
