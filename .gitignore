@@ -9,6 +9,9 @@ __pycache__/
 # redis
 *.rdb
 
+# vscode
+.vscode
+
 # Distribution / packaging
 .Python
 build/
